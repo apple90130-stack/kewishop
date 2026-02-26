@@ -244,9 +244,26 @@ export default function App() {
     setCart(prev => prev.filter(item => !(item.product.id === productId && item.variant === variant)));
   };
 
+  // 這是你剛剛熱騰騰拿到的 Google 表格專屬鑰匙
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbwIG-ICNYJMdtvbMtUtCIk1ClVF37vkKO0nbeRKJULGn037lDqbnP2AnrzzWhvCgjZq/exec";
+
   const handleCheckout = () => {
     if (cart.length === 0) return;
 
+    // 🌟 新增功能：悄悄去 Google 表格幫購物車裡的每個商品增加銷量
+    cart.forEach(item => {
+      fetch(GAS_URL, {
+        method: 'POST',
+        // 為了避免瀏覽器擋信，我們用純文字格式包裝 JSON
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+        body: JSON.stringify({
+          action: 'buy',
+          id: item.product.id,
+          quantity: item.quantity
+        })
+      }).catch(err => console.error("銷量更新失敗:", err)); // 就算失敗也不會影響顧客跳轉 LINE
+    });
+    
     const lineId = "@234csaak";
     let message = "🌟 葵葵開團好物區 - 訂單預約 🌟\n\n";
     message += "您好！我想訂購以下商品：\n";
