@@ -25,7 +25,8 @@ import {
   MousePointer2,
   MessageCircle,
   Truck,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 
 // --- Type Definitions ---
@@ -244,7 +245,7 @@ export default function App() {
     setCart(prev => prev.filter(item => !(item.product.id === productId && item.variant === variant)));
   };
 
-  // 這是你剛剛熱騰騰拿到的 Google 表格專屬鑰匙
+  // 這是你熱騰騰拿到的 Google 表格專屬鑰匙
   const GAS_URL = "https://script.google.com/macros/s/AKfycbwIG-ICNYJMdtvbMtUtCIk1ClVF37vkKO0nbeRKJULGn037lDqbnP2AnrzzWhvCgjZq/exec";
 
   const handleCheckout = () => {
@@ -290,6 +291,17 @@ export default function App() {
       alert('請選擇規格');
       return;
     }
+
+    // 🌟 新增功能：單件商品結帳連動
+    fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'buy',
+        id: product.id,
+        quantity: selectedQuantity
+      })
+    }).catch(err => console.error("銷量更新失敗:", err));
     
     let message = `🌟 葵葵開團好物區 - 立即詢問 🌟\n\n`;
     message += `我想詢問商品：${product.name}\n`;
@@ -303,7 +315,6 @@ export default function App() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // 使用新的帳號密碼進行驗證
     if (loginForm.username === '0984481130' && loginForm.password === 'dadalala888') {
       setIsAdmin(true);
       setIsLoginModalOpen(false);
@@ -324,15 +335,11 @@ export default function App() {
   const handleSaveEdit = async () => {
     if (!editForm) return;
     
-    // 這裡替換成你的 Google Apps Script 網址
     const scriptUrl = 'https://script.google.com/macros/s/AKfycbwIG-ICNYJMdtvbMtUtCIk1ClVF37vkKO0nbeRKJULGn037lDqbnP2AnrzzWhvCgjZq/exec';
-    
-    // 判斷是新商品還是舊商品
     const isNew = !editForm.id;
     const targetProduct = isNew ? { ...editForm, id: Date.now().toString() } : editForm;
 
     try {
-      // 1. 先讓畫面立刻更新 (讓管理員覺得操作很順暢)
       if (isNew) {
         setProducts(prev => [targetProduct, ...prev]);
       } else {
@@ -342,7 +349,6 @@ export default function App() {
       setIsEditing(false);
       setIsConfirmingDelete(false);
 
-      // 2. 打包資料，呼叫 doPost 將包裹寄送給 Google 表格
       await fetch(scriptUrl, {
         method: 'POST',
         body: JSON.stringify(targetProduct),
@@ -446,426 +452,230 @@ export default function App() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <AnimatePresence mode="wait">
-          {!selectedProduct ? (
-            <motion.div
-              key="list"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
-            >
-              {/* Countdown Banner */}
-              {activeCountdownProduct && (
-                <motion.div 
-                  onClick={scrollToLimited}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-8 bg-stone-900 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 cursor-pointer hover:bg-stone-800 transition-all shadow-lg shadow-stone-900/20"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-rose-500">
-                      <Zap className="w-5 h-5 fill-current" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-bold text-base">即將截團：{activeCountdownProduct.name}</h3>
-                      <p className="text-white/60 text-xs">精選商品下殺優惠，錯過不再！</p>
-                    </div>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 flex items-center gap-3 border border-white/10">
-                    <span className="text-white/60 text-xs font-bold">截團倒數</span>
-                    <div className="flex items-center gap-2 font-mono text-xl font-bold text-rose-500">
-                      <span>{String(timeLeft.hours).padStart(2, '0')}</span>
-                      <span className="animate-pulse">:</span>
-                      <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
-                      <span className="animate-pulse">:</span>
-                      <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Hero Section */}
-              <section className="mb-12 text-center mt-6">
-                <h2 className="text-4xl md:text-5xl font-bold mb-4 text-stone-800">
-                  美好生活，從這裡開始
-                </h2>
-                <p className="text-stone-700/70 max-w-lg mx-auto">
-                  葵葵為您嚴選高品質的日常所需，從健康到居家，每一件都是我們的真心推薦。
-                </p>
-              </section>
-
-              {/* Category Tabs */}
-              <div className="flex flex-wrap gap-2 mb-8 justify-center">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id as any)}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                      activeCategory === cat.id
-                        ? 'bg-stone-700 text-orange-50 shadow-lg shadow-stone-700/20'
-                        : 'bg-rose-200 text-stone-700 hover:bg-rose-200/70'
-                    }`}
+        {/* 🌟 新增功能：載入中動畫 */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <Loader2 className="w-12 h-12 text-rose-500 animate-spin" />
+            <p className="text-stone-700 font-bold text-lg animate-pulse">葵葵好物載入中...</p>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            {!selectedProduct ? (
+              <motion.div
+                key="list"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+              >
+                {/* Countdown Banner */}
+                {activeCountdownProduct && (
+                  <motion.div 
+                    onClick={scrollToLimited}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8 bg-stone-900 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 cursor-pointer hover:bg-stone-800 transition-all shadow-lg shadow-stone-900/20"
                   >
-                    {cat.icon}
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Product Grid */}
-              <div id="product-grid" className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-24">
-                {filteredProducts.map((product) => (
-                  <motion.div
-                    layoutId={`product-${product.id}`}
-                    key={product.id}
-                    onClick={() => {
-                      setSelectedProduct(product);
-                      setActiveImageIdx(0);
-                      setSelectedVariant(product.variants[0] || '');
-                      setSelectedQuantity(1);
-                    }}
-                    className={`group cursor-pointer bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-rose-200/50 ${
-                      product.category === 'welfare' ? 'col-span-2 lg:col-span-4' : ''
-                    }`}
-                  >
-                    <div className={`relative ${product.category === 'welfare' ? 'aspect-[21/9]' : 'aspect-square'} overflow-hidden`}>
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        referrerPolicy="no-referrer"
-                      />
-                      {product.status === 'limited' && (
-                        <div className="absolute top-4 left-4 bg-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> 限時開團
-                        </div>
-                      )}
-                      {product.category === 'welfare' && (
-                        <div className="absolute top-4 left-4 bg-stone-700 text-orange-50 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" /> 粉絲福利
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-stone-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </div>
-                    <div className="p-6">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">
-                          {product.category === 'health' ? '保健食品' : product.category === 'daily' ? '生活用品' : product.category === 'limited' ? '限時開團' : '活動公告'}
-                        </span>
-                        <button 
-                          onClick={(e) => toggleFavorite(product.id, e)}
-                          className="p-1.5 rounded-full hover:bg-rose-200/50 transition-colors"
-                        >
-                          <Heart className={`w-4 h-4 transition-colors ${favorites.includes(product.id) ? 'text-rose-500 fill-rose-500' : 'text-rose-400'}`} />
-                        </button>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-rose-500">
+                        <Zap className="w-5 h-5 fill-current" />
                       </div>
-                      <h3 className="text-lg font-bold text-stone-900 mb-2 line-clamp-1">
-                        {product.name}
-                      </h3>
-                      {product.category !== 'welfare' && (
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-xl font-bold text-stone-700">
-                            ${product.price}
-                          </span>
-                          {product.originalPrice && (
-                            <span className="text-sm text-stone-700/40 line-through">
-                              ${product.originalPrice}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      <div className="mt-4 flex items-center text-sm font-medium text-stone-700/60 group-hover:text-rose-500 transition-colors">
-                        查看詳情 <ChevronRight className="w-4 h-4 ml-1" />
+                      <div>
+                        <h3 className="text-white font-bold text-base">即將截團：{activeCountdownProduct.name}</h3>
+                        <p className="text-white/60 text-xs">精選商品下殺優惠，錯過不再！</p>
+                      </div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 flex items-center gap-3 border border-white/10">
+                      <span className="text-white/60 text-xs font-bold">截團倒數</span>
+                      <div className="flex items-center gap-2 font-mono text-xl font-bold text-rose-500">
+                        <span>{String(timeLeft.hours).padStart(2, '0')}</span>
+                        <span className="animate-pulse">:</span>
+                        <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
+                        <span className="animate-pulse">:</span>
+                        <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
                       </div>
                     </div>
                   </motion.div>
-                ))}
-              </div>
+                )}
 
-              {/* Simple Three Steps Section */}
-              <section className="py-24 border-t border-rose-200">
-                <div className="text-center mb-16">
-                  <h2 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4">簡單三步驟，美好送到家</h2>
-                  <div className="w-24 h-1 bg-rose-200 mx-auto rounded-full"></div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {[
-                    { 
-                      step: "1. 線上選購", 
-                      desc: "瀏覽目錄，選擇您心儀的商品。", 
-                      icon: MousePointer2,
-                      color: "bg-rose-100 text-rose-500"
-                    },
-                    { 
-                      step: "2. 私訊下單", 
-                      desc: "點擊按鈕，直接透過 Line 告知我們。", 
-                      icon: MessageCircle,
-                      color: "bg-rose-100 text-rose-500"
-                    },
-                    { 
-                      step: "3. 快速出貨", 
-                      desc: "確認訂單後，我們將火速為您寄送。", 
-                      icon: Truck,
-                      color: "bg-rose-100 text-rose-500"
-                    }
-                  ].map((item, idx) => (
-                    <motion.div 
-                      key={idx}
-                      whileHover={{ y: -10 }}
-                      className="bg-white p-10 rounded-[40px] shadow-sm hover:shadow-xl transition-all text-center border border-rose-200/20"
+                {/* Hero Section */}
+                <section className="mb-12 text-center mt-6">
+                  <h2 className="text-4xl md:text-5xl font-bold mb-4 text-stone-800">
+                    美好生活，從這裡開始
+                  </h2>
+                  <p className="text-stone-700/70 max-w-lg mx-auto">
+                    葵葵為您嚴選高品質的日常所需，從健康到居家，每一件都是我們的真心推薦。
+                  </p>
+                </section>
+
+                {/* Category Tabs */}
+                <div className="flex flex-wrap gap-2 mb-8 justify-center">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id as any)}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                        activeCategory === cat.id
+                          ? 'bg-stone-700 text-orange-50 shadow-lg shadow-stone-700/20'
+                          : 'bg-rose-200 text-stone-700 hover:bg-rose-200/70'
+                      }`}
                     >
-                      <div className={`w-20 h-20 rounded-full ${item.color} flex items-center justify-center mx-auto mb-8`}>
-                        <item.icon className="w-8 h-8" />
+                      {cat.icon}
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Product Grid */}
+                <div id="product-grid" className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-24">
+                  {filteredProducts.map((product) => (
+                    <motion.div
+                      layoutId={`product-${product.id}`}
+                      key={product.id}
+                      onClick={() => {
+                        setSelectedProduct(product);
+                        setActiveImageIdx(0);
+                        setSelectedVariant(product.variants[0] || '');
+                        setSelectedQuantity(1);
+                      }}
+                      className={`group cursor-pointer bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-rose-200/50 ${
+                        product.category === 'welfare' ? 'col-span-2 lg:col-span-4' : ''
+                      }`}
+                    >
+                      <div className={`relative ${product.category === 'welfare' ? 'aspect-[21/9]' : 'aspect-square'} overflow-hidden bg-white`}>
+                        {/* 🌟 修復 1：圖片全覽 object-contain */}
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
+                          referrerPolicy="no-referrer"
+                        />
+                        {product.status === 'limited' && (
+                          <div className="absolute top-4 left-4 bg-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> 限時開團
+                          </div>
+                        )}
+                        {product.category === 'welfare' && (
+                          <div className="absolute top-4 left-4 bg-stone-700 text-orange-50 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" /> 粉絲福利
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-stone-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <h3 className="text-xl font-bold text-stone-900 mb-4">{item.step}</h3>
-                      <p className="text-stone-700/60 leading-relaxed">{item.desc}</p>
+                      <div className="p-6">
+                        <div className="flex justify-between items-start mb-2">
+                          {/* 🌟 修復 3：分類標籤顯示正確名稱 */}
+                          <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">
+                            {product.category === 'health' ? '保健食品' : product.category === 'daily' ? '生活用品' : product.category === 'limited' ? '限時開團' : '葵粉福利區'}
+                          </span>
+                          <button 
+                            onClick={(e) => toggleFavorite(product.id, e)}
+                            className="p-1.5 rounded-full hover:bg-rose-200/50 transition-colors"
+                          >
+                            <Heart className={`w-4 h-4 transition-colors ${favorites.includes(product.id) ? 'text-rose-500 fill-rose-500' : 'text-rose-400'}`} />
+                          </button>
+                        </div>
+                        <h3 className="text-lg font-bold text-stone-900 mb-2 line-clamp-1">
+                          {product.name}
+                        </h3>
+                        {product.category !== 'welfare' && (
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-bold text-stone-700">
+                              ${product.price}
+                            </span>
+                            {product.originalPrice && (
+                              <span className="text-sm text-stone-700/40 line-through">
+                                ${product.originalPrice}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <div className="mt-4 flex items-center text-sm font-medium text-stone-700/60 group-hover:text-rose-500 transition-colors">
+                          查看詳情 <ChevronRight className="w-4 h-4 ml-1" />
+                        </div>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
-              </section>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="detail"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.4 }}
-              className="bg-white rounded-[40px] overflow-hidden shadow-2xl border border-rose-200/30"
-            >
-              <div className="flex flex-col md:flex-row">
-                {/* Product Image */}
-                <div className="md:w-1/2 relative flex flex-col">
-                  {isEditing ? (
-                    <div className="w-full h-full bg-rose-100 flex flex-col p-8 overflow-y-auto max-h-[600px]">
-                      <div className="flex justify-between items-center mb-4">
-                        <p className="text-stone-700 font-bold">編輯圖片網址 (最多10張)</p>
-                        <span className="text-xs text-stone-700/60">{editForm?.images.length || 0} / 10</span>
-                      </div>
-                      <div className="space-y-3">
-                        {editForm?.images.map((img, idx) => (
-                          <div key={idx} className="flex gap-2">
-                            <input 
-                              type="text"
-                              value={img}
-                              onChange={(e) => {
-                                const newImages = [...(editForm?.images || [])];
-                                newImages[idx] = e.target.value;
-                                setEditForm(prev => prev ? { ...prev, images: newImages } : null);
-                              }}
-                              className="flex-1 p-2 rounded-lg border border-rose-200 text-sm"
-                              placeholder="https://..."
-                            />
-                            <button 
-                              onClick={() => {
-                                const newImages = editForm?.images.filter((_, i) => i !== idx);
-                                setEditForm(prev => prev ? { ...prev, images: newImages } : null);
-                              }}
-                              className="p-2 text-rose-500 hover:bg-rose-200 rounded-lg"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                        {(editForm?.images.length || 0) < 10 && (
-                          <button 
-                            onClick={() => setEditForm(prev => prev ? { ...prev, images: [...prev.images, ''] } : null)}
-                            className="w-full py-2 border-2 border-dashed border-rose-200 rounded-xl text-stone-700 hover:bg-rose-200/30 flex items-center justify-center gap-2 text-sm font-bold"
-                          >
-                            <Plus className="w-4 h-4" /> 新增圖片
-                          </button>
-                        )}
-                      </div>
-                      <div className="mt-6 grid grid-cols-5 gap-2">
-                        {editForm?.images.filter(url => url).map((url, idx) => (
-                          <div key={idx} className="aspect-square rounded-lg overflow-hidden border border-rose-200">
-                            <img src={url} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col h-full">
-                      <div className="relative aspect-square overflow-hidden touch-pan-y">
-                        <AnimatePresence mode="wait">
-                          <motion.img
-                            key={selectedProduct.images[activeImageIdx]}
-                            initial={{ opacity: 0, x: 50 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -50 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            src={selectedProduct.images[activeImageIdx]}
-                            alt={selectedProduct.name}
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                            drag="x"
-                            dragConstraints={{ left: 0, right: 0 }}
-                            onDragEnd={(_, info) => {
-                              if (info.offset.x > 100) {
-                                setActiveImageIdx(prev => (prev > 0 ? prev - 1 : selectedProduct.images.length - 1));
-                              } else if (info.offset.x < -100) {
-                                setActiveImageIdx(prev => (prev < selectedProduct.images.length - 1 ? prev + 1 : 0));
-                              }
-                            }}
-                          />
-                        </AnimatePresence>
-                        
-                        {selectedProduct.images.length > 1 && (
-                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                            {selectedProduct.images.map((_, idx) => (
-                              <div 
-                                key={idx}
-                                className={`w-1.5 h-1.5 rounded-full transition-all ${
-                                  activeImageIdx === idx ? 'bg-rose-500 w-4' : 'bg-white/50'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      {selectedProduct.images.length > 1 && (
-                        <div className="p-4 bg-rose-50 flex gap-2 overflow-x-auto scrollbar-hide">
-                          {selectedProduct.images.map((img, idx) => (
-                            <div 
-                              key={idx} 
-                              onClick={() => setActiveImageIdx(idx)}
-                              className={`w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                                activeImageIdx === idx ? 'border-rose-500 shadow-lg' : 'border-rose-200/30 hover:border-rose-500/50'
-                              }`}
-                            >
-                              <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="" />
-                            </div>
-                          ))}
+
+                {/* Simple Three Steps Section */}
+                <section className="py-24 border-t border-rose-200">
+                  <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4">簡單三步驟，美好送到家</h2>
+                    <div className="w-24 h-1 bg-rose-200 mx-auto rounded-full"></div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {[
+                      { 
+                        step: "1. 線上選購", 
+                        desc: "瀏覽目錄，選擇您心儀的商品。", 
+                        icon: MousePointer2,
+                        color: "bg-rose-100 text-rose-500"
+                      },
+                      { 
+                        step: "2. 私訊下單", 
+                        desc: "點擊按鈕，直接透過 Line 告知我們。", 
+                        icon: MessageCircle,
+                        color: "bg-rose-100 text-rose-500"
+                      },
+                      { 
+                        step: "3. 快速出貨", 
+                        desc: "確認訂單後，我們將火速為您寄送。", 
+                        icon: Truck,
+                        color: "bg-rose-100 text-rose-500"
+                      }
+                    ].map((item, idx) => (
+                      <motion.div 
+                        key={idx}
+                        whileHover={{ y: -10 }}
+                        className="bg-white p-10 rounded-[40px] shadow-sm hover:shadow-xl transition-all text-center border border-rose-200/20"
+                      >
+                        <div className={`w-20 h-20 rounded-full ${item.color} flex items-center justify-center mx-auto mb-8`}>
+                          <item.icon className="w-8 h-8" />
                         </div>
-                      )}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => {
-                      setSelectedProduct(null);
-                      setIsEditing(false);
-                      setIsConfirmingDelete(false);
-                    }}
-                    className="absolute top-6 left-6 w-12 h-12 rounded-full bg-white/90 backdrop-blur shadow-lg flex items-center justify-center text-stone-900 hover:bg-rose-500 hover:text-white transition-all duration-300"
-                  >
-                    <ArrowLeft className="w-6 h-6" />
-                  </button>
-                  
-                  {isAdmin && !isEditing && (
-                    <button
-                      onClick={() => {
-                        setIsEditing(true);
-                        setEditForm(selectedProduct);
-                      }}
-                      className="absolute top-6 right-6 w-12 h-12 rounded-full bg-stone-700 text-white shadow-lg flex items-center justify-center hover:bg-stone-900 transition-all duration-300"
-                    >
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Product Info */}
-                <div className="md:w-1/2 p-8 md:p-12 flex flex-col">
-                  {isEditing ? (
-                    <div className="space-y-6">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-2xl font-bold text-stone-900">編輯商品資訊</h3>
-                        <button onClick={() => { setIsEditing(false); setIsConfirmingDelete(false); }} className="p-2 text-stone-700 hover:text-rose-500">
-                          <X className="w-6 h-6" />
-                        </button>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品分類</label>
-                        <select 
-                          value={editForm?.category || 'health'}
-                          onChange={(e) => setEditForm(prev => prev ? { ...prev, category: e.target.value as any } : null)}
-                          className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500 bg-white"
-                        >
-                          <option value="health">保健食品</option>
-                          <option value="daily">生活用品</option>
-                          <option value="limited">限時開團</option>
-                          <option value="welfare">葵粉福利區</option>
-                        </select>
-                      </div>
-
-                      {editForm?.category === 'welfare' ? (
-                        <div className="flex items-center gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-200">
-                          <input 
-                            type="checkbox"
-                            id="isAnnouncement"
-                            checked={editForm?.isAnnouncement || false}
-                            onChange={(e) => setEditForm(prev => prev ? { ...prev, isAnnouncement: e.target.checked } : null)}
-                            className="w-5 h-5 accent-rose-500"
-                          />
-                          <label htmlFor="isAnnouncement" className="text-sm font-bold text-stone-900 cursor-pointer">
-                            設定為活動公告 (隱藏價格與規格)
-                          </label>
+                        <h3 className="text-xl font-bold text-stone-900 mb-4">{item.step}</h3>
+                        <p className="text-stone-700/60 leading-relaxed">{item.desc}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="detail"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4 }}
+                className="bg-white rounded-[40px] overflow-hidden shadow-2xl border border-rose-200/30"
+              >
+                <div className="flex flex-col md:flex-row">
+                  {/* Product Image */}
+                  <div className="md:w-1/2 relative flex flex-col">
+                    {isEditing ? (
+                      <div className="w-full h-full bg-rose-100 flex flex-col p-8 overflow-y-auto max-h-[600px]">
+                        <div className="flex justify-between items-center mb-4">
+                          <p className="text-stone-700 font-bold">編輯圖片網址 (最多10張)</p>
+                          <span className="text-xs text-stone-700/60">{editForm?.images.length || 0} / 10</span>
                         </div>
-                      ) : null}
-                      
-                      <div>
-                        <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品名稱</label>
-                        <input 
-                          type="text"
-                          value={editForm?.name || ''}
-                          onChange={(e) => setEditForm(prev => prev ? { ...prev, name: e.target.value } : null)}
-                          className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
-                        />
-                      </div>
-
-                      {(!editForm?.isAnnouncement || editForm?.category !== 'welfare') && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">價格</label>
-                            <input 
-                              type="number"
-                              value={editForm?.price || 0}
-                              onChange={(e) => setEditForm(prev => prev ? { ...prev, price: parseInt(e.target.value) } : null)}
-                              className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">原價 (可選)</label>
-                            <input 
-                              type="number"
-                              value={editForm?.originalPrice || ''}
-                              onChange={(e) => setEditForm(prev => prev ? { ...prev, originalPrice: e.target.value ? parseInt(e.target.value) : undefined } : null)}
-                              className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品描述</label>
-                        <textarea 
-                          value={editForm?.description || ''}
-                          onChange={(e) => setEditForm(prev => prev ? { ...prev, description: e.target.value } : null)}
-                          className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500 h-32"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品特色</label>
-                        <div className="space-y-2">
-                          {editForm?.features.map((feature, i) => (
-                            <div key={i} className="flex gap-2">
+                        <div className="space-y-3">
+                          {editForm?.images.map((img, idx) => (
+                            <div key={idx} className="flex gap-2">
                               <input 
                                 type="text"
-                                value={feature}
+                                value={img}
                                 onChange={(e) => {
-                                  const newFeatures = [...(editForm?.features || [])];
-                                  newFeatures[i] = e.target.value;
-                                  setEditForm(prev => prev ? { ...prev, features: newFeatures } : null);
+                                  const newImages = [...(editForm?.images || [])];
+                                  newImages[idx] = e.target.value;
+                                  setEditForm(prev => prev ? { ...prev, images: newImages } : null);
                                 }}
-                                className="flex-1 p-2 rounded-lg border border-rose-200"
+                                className="flex-1 p-2 rounded-lg border border-rose-200 text-sm"
+                                placeholder="https://..."
                               />
                               <button 
                                 onClick={() => {
-                                  const newFeatures = editForm?.features.filter((_, idx) => idx !== i);
-                                  setEditForm(prev => prev ? { ...prev, features: newFeatures || [] } : null);
+                                  const newImages = editForm?.images.filter((_, i) => i !== idx);
+                                  setEditForm(prev => prev ? { ...prev, images: newImages } : null);
                                 }}
                                 className="p-2 text-rose-500 hover:bg-rose-200 rounded-lg"
                               >
@@ -873,238 +683,446 @@ export default function App() {
                               </button>
                             </div>
                           ))}
-                          <button 
-                            onClick={() => setEditForm(prev => prev ? { ...prev, features: [...prev.features, ''] } : null)}
-                            className="flex items-center gap-2 text-sm font-bold text-stone-700 hover:text-rose-500"
-                          >
-                            <Plus className="w-4 h-4" /> 新增特色
-                          </button>
+                          {(editForm?.images.length || 0) < 10 && (
+                            <button 
+                              onClick={() => setEditForm(prev => prev ? { ...prev, images: [...prev.images, ''] } : null)}
+                              className="w-full py-2 border-2 border-dashed border-rose-200 rounded-xl text-stone-700 hover:bg-rose-200/30 flex items-center justify-center gap-2 text-sm font-bold"
+                            >
+                              <Plus className="w-4 h-4" /> 新增圖片
+                            </button>
+                          )}
+                        </div>
+                        <div className="mt-6 grid grid-cols-5 gap-2">
+                          {editForm?.images.filter(url => url).map((url, idx) => (
+                            <div key={idx} className="aspect-square rounded-lg overflow-hidden border border-rose-200">
+                              <img src={url} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="" />
+                            </div>
+                          ))}
                         </div>
                       </div>
-
-                      {(!editForm?.isAnnouncement || editForm?.category !== 'welfare') && (
-                        <>
-                          <div>
-                            <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品規格 (逗號分隔)</label>
-                            <input 
-                              type="text"
-                              value={editForm?.variants.join(', ') || ''}
-                              onChange={(e) => setEditForm(prev => prev ? { ...prev, variants: e.target.value.split(',').map(v => v.trim()).filter(v => v) } : null)}
-                              className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
-                              placeholder="例如：原味, 辣味, 芥末"
+                    ) : (
+                      <div className="flex flex-col h-full">
+                        <div className="relative aspect-square overflow-hidden touch-pan-y bg-white">
+                          <AnimatePresence mode="wait">
+                            <motion.img
+                              key={selectedProduct.images[activeImageIdx]}
+                              initial={{ opacity: 0, x: 50 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -50 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                              src={selectedProduct.images[activeImageIdx]}
+                              alt={selectedProduct.name}
+                              className="w-full h-full object-contain"
+                              referrerPolicy="no-referrer"
+                              drag="x"
+                              dragConstraints={{ left: 0, right: 0 }}
+                              onDragEnd={(_, info) => {
+                                if (info.offset.x > 100) {
+                                  setActiveImageIdx(prev => (prev > 0 ? prev - 1 : selectedProduct.images.length - 1));
+                                } else if (info.offset.x < -100) {
+                                  setActiveImageIdx(prev => (prev < selectedProduct.images.length - 1 ? prev + 1 : 0));
+                                }
+                              }}
                             />
+                          </AnimatePresence>
+                          
+                          {selectedProduct.images.length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                              {selectedProduct.images.map((_, idx) => (
+                                <div 
+                                  key={idx}
+                                  className={`w-1.5 h-1.5 rounded-full transition-all shadow-sm ${
+                                    activeImageIdx === idx ? 'bg-rose-500 w-4' : 'bg-stone-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {selectedProduct.images.length > 1 && (
+                          <div className="p-4 bg-rose-50 flex gap-2 overflow-x-auto scrollbar-hide">
+                            {selectedProduct.images.map((img, idx) => (
+                              <div 
+                                key={idx} 
+                                onClick={() => setActiveImageIdx(idx)}
+                                className={`w-16 h-16 flex-shrink-0 bg-white rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                                  activeImageIdx === idx ? 'border-rose-500 shadow-lg' : 'border-rose-200/30 hover:border-rose-500/50'
+                                }`}
+                              >
+                                <img src={img} className="w-full h-full object-contain" referrerPolicy="no-referrer" alt="" />
+                              </div>
+                            ))}
                           </div>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSelectedProduct(null);
+                        setIsEditing(false);
+                        setIsConfirmingDelete(false);
+                      }}
+                      className="absolute top-6 left-6 w-12 h-12 rounded-full bg-white/90 backdrop-blur shadow-lg flex items-center justify-center text-stone-900 hover:bg-rose-500 hover:text-white transition-all duration-300"
+                    >
+                      <ArrowLeft className="w-6 h-6" />
+                    </button>
+                    
+                    {isAdmin && !isEditing && (
+                      <button
+                        onClick={() => {
+                          setIsEditing(true);
+                          setEditForm(selectedProduct);
+                        }}
+                        className="absolute top-6 right-6 w-12 h-12 rounded-full bg-stone-700 text-white shadow-lg flex items-center justify-center hover:bg-stone-900 transition-all duration-300"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
 
-                          <div>
-                            <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">限購數量 (0 或留空表示不限)</label>
+                  {/* Product Info */}
+                  <div className="md:w-1/2 p-8 md:p-12 flex flex-col">
+                    {isEditing ? (
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-2xl font-bold text-stone-900">編輯商品資訊</h3>
+                          <button onClick={() => { setIsEditing(false); setIsConfirmingDelete(false); }} className="p-2 text-stone-700 hover:text-rose-500">
+                            <X className="w-6 h-6" />
+                          </button>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品分類</label>
+                          <select 
+                            value={editForm?.category || 'health'}
+                            onChange={(e) => setEditForm(prev => prev ? { ...prev, category: e.target.value as any } : null)}
+                            className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500 bg-white"
+                          >
+                            <option value="health">保健食品</option>
+                            <option value="daily">生活用品</option>
+                            <option value="limited">限時開團</option>
+                            <option value="welfare">葵粉福利區</option>
+                          </select>
+                        </div>
+
+                        {editForm?.category === 'welfare' ? (
+                          <div className="flex items-center gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-200">
                             <input 
-                              type="number"
-                              value={editForm?.maxLimit || ''}
-                              onChange={(e) => setEditForm(prev => prev ? { ...prev, maxLimit: e.target.value ? parseInt(e.target.value) : undefined } : null)}
-                              className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
+                              type="checkbox"
+                              id="isAnnouncement"
+                              checked={editForm?.isAnnouncement || false}
+                              onChange={(e) => setEditForm(prev => prev ? { ...prev, isAnnouncement: e.target.checked } : null)}
+                              className="w-5 h-5 accent-rose-500"
                             />
+                            <label htmlFor="isAnnouncement" className="text-sm font-bold text-stone-900 cursor-pointer">
+                              設定為活動公告 (隱藏價格與規格)
+                            </label>
                           </div>
+                        ) : null}
+                        
+                        <div>
+                          <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品名稱</label>
+                          <input 
+                            type="text"
+                            value={editForm?.name || ''}
+                            onChange={(e) => setEditForm(prev => prev ? { ...prev, name: e.target.value } : null)}
+                            className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
+                          />
+                        </div>
 
-                          {editForm?.category === 'limited' && (
+                        {(!editForm?.isAnnouncement || editForm?.category !== 'welfare') && (
+                          <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">團購截止時間</label>
+                              <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">價格</label>
                               <input 
-                                type="datetime-local"
-                                value={editForm?.countdownTarget ? new Date(editForm.countdownTarget).toISOString().slice(0, 16) : ''}
-                                onChange={(e) => setEditForm(prev => prev ? { ...prev, countdownTarget: e.target.value ? new Date(e.target.value).toISOString() : undefined } : null)}
+                                type="number"
+                                value={editForm?.price || 0}
+                                onChange={(e) => setEditForm(prev => prev ? { ...prev, price: parseInt(e.target.value) } : null)}
                                 className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
                               />
                             </div>
-                          )}
-                        </>
-                      )}
-
-                      <div className="flex gap-4 pt-4">
-                        {editForm?.id && (
-                          isConfirmingDelete ? (
-                            <div className="flex flex-1 gap-2">
-                              <button 
-                                onClick={() => {
-                                  setProducts(prev => prev.filter(p => p.id !== editForm.id));
-                                  setIsEditing(false);
-                                  setSelectedProduct(null);
-                                  setIsConfirmingDelete(false);
-                                }}
-                                className="flex-1 bg-rose-500 text-white py-4 rounded-2xl font-bold flex items-center justify-center hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
-                              >
-                                確定刪除
-                              </button>
-                              <button 
-                                onClick={() => setIsConfirmingDelete(false)}
-                                className="flex-1 bg-rose-100 text-rose-600 py-4 rounded-2xl font-bold flex items-center justify-center hover:bg-rose-200 transition-colors"
-                              >
-                                取消
-                              </button>
+                            <div>
+                              <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">原價 (可選)</label>
+                              <input 
+                                type="number"
+                                value={editForm?.originalPrice || ''}
+                                onChange={(e) => setEditForm(prev => prev ? { ...prev, originalPrice: e.target.value ? parseInt(e.target.value) : undefined } : null)}
+                                className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
+                              />
                             </div>
-                          ) : (
-                            <button 
-                              onClick={() => setIsConfirmingDelete(true)}
-                              className="px-6 bg-rose-100 text-rose-600 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-rose-200 transition-colors"
-                            >
-                              <Trash2 className="w-5 h-5" /> 刪除
-                            </button>
-                          )
+                          </div>
                         )}
-                        <button 
-                          onClick={handleSaveEdit}
-                          className="flex-1 bg-stone-700 text-orange-50 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-stone-900 transition-colors"
-                        >
-                          <Save className="w-5 h-5" /> 儲存變更
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mb-8">
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="px-3 py-1 rounded-full bg-rose-200 text-rose-600 text-xs font-bold tracking-widest uppercase">
-                            {selectedProduct.category === 'health' ? '保健食品' : selectedProduct.category === 'daily' ? '生活用品' : selectedProduct.category === 'limited' ? '限時開團' : '活動公告'}
-                          </span>
-                          {selectedProduct.status === 'limited' && (
-                            <span className="px-3 py-1 rounded-full bg-rose-600/10 text-rose-500 text-xs font-bold tracking-widest uppercase flex items-center gap-1">
-                              <Clock className="w-3 h-3" /> 限時優惠
-                            </span>
-                          )}
+
+                        <div>
+                          <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品描述</label>
+                          <textarea 
+                            value={editForm?.description || ''}
+                            onChange={(e) => setEditForm(prev => prev ? { ...prev, description: e.target.value } : null)}
+                            className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500 h-32"
+                          />
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4 leading-tight">
-                          {selectedProduct.name}
-                        </h2>
-                        {!selectedProduct.isAnnouncement && (
-                          <div className="flex items-baseline gap-3 mb-6">
-                            <span className="text-4xl font-bold text-stone-700">
-                              ${selectedProduct.price}
+
+                        <div>
+                          <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品特色</label>
+                          <div className="space-y-2">
+                            {editForm?.features.map((feature, i) => (
+                              <div key={i} className="flex gap-2">
+                                <input 
+                                  type="text"
+                                  value={feature}
+                                  onChange={(e) => {
+                                    const newFeatures = [...(editForm?.features || [])];
+                                    newFeatures[i] = e.target.value;
+                                    setEditForm(prev => prev ? { ...prev, features: newFeatures } : null);
+                                  }}
+                                  className="flex-1 p-2 rounded-lg border border-rose-200"
+                                />
+                                <button 
+                                  onClick={() => {
+                                    const newFeatures = editForm?.features.filter((_, idx) => idx !== i);
+                                    setEditForm(prev => prev ? { ...prev, features: newFeatures || [] } : null);
+                                  }}
+                                  className="p-2 text-rose-500 hover:bg-rose-200 rounded-lg"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                            <button 
+                              onClick={() => setEditForm(prev => prev ? { ...prev, features: [...prev.features, ''] } : null)}
+                              className="flex items-center gap-2 text-sm font-bold text-stone-700 hover:text-rose-500"
+                            >
+                              <Plus className="w-4 h-4" /> 新增特色
+                            </button>
+                          </div>
+                        </div>
+
+                        {(!editForm?.isAnnouncement || editForm?.category !== 'welfare') && (
+                          <>
+                            <div>
+                              <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品規格 (逗號分隔)</label>
+                              <input 
+                                type="text"
+                                value={editForm?.variants.join(', ') || ''}
+                                onChange={(e) => setEditForm(prev => prev ? { ...prev, variants: e.target.value.split(',').map(v => v.trim()).filter(v => v) } : null)}
+                                className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
+                                placeholder="例如：原味, 辣味, 芥末"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">限購數量 (0 或留空表示不限)</label>
+                              <input 
+                                type="number"
+                                value={editForm?.maxLimit || ''}
+                                onChange={(e) => setEditForm(prev => prev ? { ...prev, maxLimit: e.target.value ? parseInt(e.target.value) : undefined } : null)}
+                                className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
+                              />
+                            </div>
+
+                            {editForm?.category === 'limited' && (
+                              <div>
+                                <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">團購截止時間</label>
+                                <input 
+                                  type="datetime-local"
+                                  value={editForm?.countdownTarget ? new Date(editForm.countdownTarget).toISOString().slice(0, 16) : ''}
+                                  onChange={(e) => setEditForm(prev => prev ? { ...prev, countdownTarget: e.target.value ? new Date(e.target.value).toISOString() : undefined } : null)}
+                                  className="w-full p-3 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-500"
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        <div className="flex gap-4 pt-4">
+                          {editForm?.id && (
+                            isConfirmingDelete ? (
+                              <div className="flex flex-1 gap-2">
+                                <button 
+                                  onClick={() => {
+                                    setProducts(prev => prev.filter(p => p.id !== editForm.id));
+                                    setIsEditing(false);
+                                    setSelectedProduct(null);
+                                    setIsConfirmingDelete(false);
+                                  }}
+                                  className="flex-1 bg-rose-500 text-white py-4 rounded-2xl font-bold flex items-center justify-center hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
+                                >
+                                  確定刪除
+                                </button>
+                                <button 
+                                  onClick={() => setIsConfirmingDelete(false)}
+                                  className="flex-1 bg-rose-100 text-rose-600 py-4 rounded-2xl font-bold flex items-center justify-center hover:bg-rose-200 transition-colors"
+                                >
+                                  取消
+                                </button>
+                              </div>
+                            ) : (
+                              <button 
+                                onClick={() => setIsConfirmingDelete(true)}
+                                className="px-6 bg-rose-100 text-rose-600 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-rose-200 transition-colors"
+                              >
+                                <Trash2 className="w-5 h-5" /> 刪除
+                              </button>
+                            )
+                          )}
+                          <button 
+                            onClick={handleSaveEdit}
+                            className="flex-1 bg-stone-700 text-orange-50 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-stone-900 transition-colors"
+                          >
+                            <Save className="w-5 h-5" /> 儲存變更
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-8">
+                          <div className="flex items-center gap-2 mb-4">
+                            {/* 🌟 修復 3：詳細頁的分類標籤 */}
+                            <span className="px-3 py-1 rounded-full bg-rose-200 text-rose-600 text-xs font-bold tracking-widest uppercase">
+                              {selectedProduct.category === 'health' ? '保健食品' : selectedProduct.category === 'daily' ? '生活用品' : selectedProduct.category === 'limited' ? '限時開團' : '葵粉福利區'}
                             </span>
-                            {selectedProduct.originalPrice && (
-                              <span className="text-lg text-stone-700/40 line-through">
-                                ${selectedProduct.originalPrice}
+                            {selectedProduct.status === 'limited' && (
+                              <span className="px-3 py-1 rounded-full bg-rose-600/10 text-rose-500 text-xs font-bold tracking-widest uppercase flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> 限時優惠
                               </span>
                             )}
                           </div>
-                        )}
-                        <p className="text-stone-700/70 leading-relaxed mb-8 text-lg">
-                          {selectedProduct.description}
-                        </p>
+                          <h2 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4 leading-tight">
+                            {selectedProduct.name}
+                          </h2>
+                          {!selectedProduct.isAnnouncement && (
+                            <div className="flex items-baseline gap-3 mb-6">
+                              <span className="text-4xl font-bold text-stone-700">
+                                ${selectedProduct.price}
+                              </span>
+                              {selectedProduct.originalPrice && (
+                                <span className="text-lg text-stone-700/40 line-through">
+                                  ${selectedProduct.originalPrice}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {/* 🌟 修復 2：商品描述加入 whitespace-pre-wrap 來支援換行 */}
+                          <p className="text-stone-700/70 leading-relaxed mb-8 text-lg whitespace-pre-wrap">
+                            {selectedProduct.description}
+                          </p>
 
-                        <div className="space-y-4 mb-8">
-                          <h4 className="text-sm font-bold text-stone-900 uppercase tracking-widest">
-                            商品特色
-                          </h4>
-                          <ul className="grid grid-cols-1 gap-3">
-                            {selectedProduct.features.map((feature, i) => (
-                              <li key={i} className="flex items-center gap-3 text-stone-700/80">
-                                <div className="w-5 h-5 rounded-full bg-rose-200 flex items-center justify-center">
-                                  <ShieldCheck className="w-3 h-3 text-rose-500" />
+                          <div className="space-y-4 mb-8">
+                            <h4 className="text-sm font-bold text-stone-900 uppercase tracking-widest">
+                              商品特色
+                            </h4>
+                            <ul className="grid grid-cols-1 gap-3">
+                              {selectedProduct.features.map((feature, i) => (
+                                <li key={i} className="flex items-center gap-3 text-stone-700/80">
+                                  <div className="w-5 h-5 rounded-full bg-rose-200 flex items-center justify-center">
+                                    <ShieldCheck className="w-3 h-3 text-rose-500" />
+                                  </div>
+                                  {feature}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* Variant & Quantity Selection */}
+                          {!(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') && (
+                            <div className="space-y-6 mb-8 p-6 bg-rose-50/50 rounded-3xl border border-rose-200/20">
+                              {selectedProduct.variants.length > 0 && (
+                                <div>
+                                  <label className="block text-sm font-bold text-stone-900 mb-3">選擇規格</label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {selectedProduct.variants.map((variant) => (
+                                      <button
+                                        key={variant}
+                                        onClick={() => setSelectedVariant(variant)}
+                                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                                          selectedVariant === variant
+                                            ? 'bg-stone-700 text-orange-50 shadow-md'
+                                            : 'bg-white text-stone-700 border border-rose-200 hover:border-rose-500'
+                                        }`}
+                                      >
+                                        {variant}
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
-                                {feature}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                              )}
 
-                        {/* Variant & Quantity Selection */}
-                        {!(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') && (
-                          <div className="space-y-6 mb-8 p-6 bg-rose-50/50 rounded-3xl border border-rose-200/20">
-                            {selectedProduct.variants.length > 0 && (
-                              <div>
-                                <label className="block text-sm font-bold text-stone-900 mb-3">選擇規格</label>
-                                <div className="flex flex-wrap gap-2">
-                                  {selectedProduct.variants.map((variant) => (
-                                    <button
-                                      key={variant}
-                                      onClick={() => setSelectedVariant(variant)}
-                                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                                        selectedVariant === variant
-                                          ? 'bg-stone-700 text-orange-50 shadow-md'
-                                          : 'bg-white text-stone-700 border border-rose-200 hover:border-rose-500'
-                                      }`}
-                                    >
-                                      {variant}
-                                    </button>
-                                  ))}
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <label className="block text-sm font-bold text-stone-900 mb-1">購買數量</label>
+                                  {selectedProduct.maxLimit && (
+                                    <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">
+                                      每人限購 {selectedProduct.maxLimit} 件
+                                    </span>
+                                  )}
                                 </div>
-                              </div>
-                            )}
-
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <label className="block text-sm font-bold text-stone-900 mb-1">購買數量</label>
-                                {selectedProduct.maxLimit && (
-                                  <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">
-                                    每人限購 {selectedProduct.maxLimit} 件
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-4 bg-white rounded-xl border border-rose-200 p-1">
-                                <button 
-                                  onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
-                                  className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-700 hover:bg-rose-200 transition-colors"
-                                >
-                                  <X className="w-3 h-3 rotate-45" />
-                                </button>
-                                <span className="w-8 text-center font-bold text-stone-700">{selectedQuantity}</span>
-                                <button 
-                                  onClick={() => {
-                                    if (selectedProduct.maxLimit && selectedQuantity >= selectedProduct.maxLimit) {
-                                      alert(`已達限購數量 ${selectedProduct.maxLimit} 件`);
-                                      return;
-                                    }
-                                    setSelectedQuantity(selectedQuantity + 1);
-                                  }}
-                                  className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-700 hover:bg-rose-200 transition-colors"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </button>
+                                <div className="flex items-center gap-4 bg-white rounded-xl border border-rose-200 p-1">
+                                  <button 
+                                    onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-700 hover:bg-rose-200 transition-colors"
+                                  >
+                                    <X className="w-3 h-3 rotate-45" />
+                                  </button>
+                                  <span className="w-8 text-center font-bold text-stone-700">{selectedQuantity}</span>
+                                  <button 
+                                    onClick={() => {
+                                      if (selectedProduct.maxLimit && selectedQuantity >= selectedProduct.maxLimit) {
+                                        alert(`已達限購數量 ${selectedProduct.maxLimit} 件`);
+                                        return;
+                                      }
+                                      setSelectedQuantity(selectedQuantity + 1);
+                                    }}
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-700 hover:bg-rose-200 transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mt-auto space-y-4">
-                        <div className="flex flex-col sm:flex-row gap-4">
-                          <button 
-                            onClick={() => handleOrderNow(selectedProduct)}
-                            className="flex-1 bg-stone-700 text-orange-50 py-4 rounded-2xl font-bold text-lg hover:bg-stone-900 transition-all duration-300 shadow-xl shadow-stone-700/20 flex items-center justify-center gap-2"
-                          >
-                            {(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') ? '立即詢問' : '立即下單'} <ExternalLink className="w-5 h-5" />
-                          </button>
-                          {!(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') && (
-                            <button 
-                              onClick={() => addToCart(selectedProduct, selectedVariant, selectedQuantity)}
-                              className="flex-1 bg-rose-200 text-stone-700 py-4 rounded-2xl font-bold text-lg hover:bg-rose-200/70 transition-all duration-300 flex items-center justify-center gap-2"
-                            >
-                              加入購物籃 <ShoppingBag className="w-5 h-5" />
-                            </button>
                           )}
                         </div>
-                        <button 
-                          onClick={() => toggleFavorite(selectedProduct.id)}
-                          className={`w-full py-4 rounded-2xl border-2 font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
-                            favorites.includes(selectedProduct.id) 
-                              ? 'bg-rose-500 border-rose-500 text-white' 
-                              : 'border-rose-200 text-stone-700 hover:bg-rose-200'
-                          }`}
-                        >
-                          <Heart className={`w-5 h-5 ${favorites.includes(selectedProduct.id) ? 'fill-current' : ''}`} />
-                          {favorites.includes(selectedProduct.id) ? '已收藏' : '加入收藏'}
-                        </button>
-                      </div>
-                      
-                      <p className="mt-6 text-center text-xs text-stone-700/40">
-                        * 點擊立即下單將導向官方 LINE 客服進行訂購
-                      </p>
-                    </>
-                  )}
+
+                        <div className="mt-auto space-y-4">
+                          <div className="flex flex-col sm:flex-row gap-4">
+                            <button 
+                              onClick={() => handleOrderNow(selectedProduct)}
+                              className="flex-1 bg-stone-700 text-orange-50 py-4 rounded-2xl font-bold text-lg hover:bg-stone-900 transition-all duration-300 shadow-xl shadow-stone-700/20 flex items-center justify-center gap-2"
+                            >
+                              {(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') ? '立即詢問' : '立即下單'} <ExternalLink className="w-5 h-5" />
+                            </button>
+                            {!(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') && (
+                              <button 
+                                onClick={() => addToCart(selectedProduct, selectedVariant, selectedQuantity)}
+                                className="flex-1 bg-rose-200 text-stone-700 py-4 rounded-2xl font-bold text-lg hover:bg-rose-200/70 transition-all duration-300 flex items-center justify-center gap-2"
+                              >
+                                加入購物籃 <ShoppingBag className="w-5 h-5" />
+                              </button>
+                            )}
+                          </div>
+                          <button 
+                            onClick={() => toggleFavorite(selectedProduct.id)}
+                            className={`w-full py-4 rounded-2xl border-2 font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+                              favorites.includes(selectedProduct.id) 
+                                ? 'bg-rose-500 border-rose-500 text-white' 
+                                : 'border-rose-200 text-stone-700 hover:bg-rose-200'
+                            }`}
+                          >
+                            <Heart className={`w-5 h-5 ${favorites.includes(selectedProduct.id) ? 'fill-current' : ''}`} />
+                            {favorites.includes(selectedProduct.id) ? '已收藏' : '加入收藏'}
+                          </button>
+                        </div>
+                        
+                        <p className="mt-6 text-center text-xs text-stone-700/40">
+                          * 點擊立即下單將導向官方 LINE 客服進行訂購
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </main>
 
       {/* Toast Notification */}
