@@ -542,14 +542,14 @@ export default function App() {
                         product.category === 'welfare' ? 'col-span-2 lg:col-span-4' : ''
                       }`}
                     >
-                      <div className={`relative ${product.category === 'welfare' ? 'aspect-[21/9]' : 'aspect-square'} overflow-hidden bg-white`}>
-                        {/* 🌟 修復 1：圖片全覽 object-contain */}
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
+                     <div className="relative w-full overflow-hidden bg-white">
+    {/* 🌟 更新：統一滿版寬度，高度按圖片比例自然延伸 */}
+    <img
+      src={product.images[0]}
+      alt={product.name}
+      className="w-full h-auto block transition-transform duration-700 group-hover:scale-110"
+      referrerPolicy="no-referrer"
+    />
                         {product.status === 'limited' && (
                           <div className="absolute top-4 left-4 bg-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
                             <Clock className="w-3 h-3" /> 限時開團
@@ -702,18 +702,18 @@ export default function App() {
                       </div>
                     ) : (
                       <div className="flex flex-col h-full">
-                        <div className="relative aspect-square overflow-hidden touch-pan-y bg-white">
-                          <AnimatePresence mode="wait">
-                            <motion.img
-                              key={selectedProduct.images[activeImageIdx]}
-                              initial={{ opacity: 0, x: 50 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -50 }}
-                              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                              src={selectedProduct.images[activeImageIdx]}
-                              alt={selectedProduct.name}
-                              className="w-full h-full object-contain"
-                              referrerPolicy="no-referrer"
+                        <div className="relative w-full overflow-hidden touch-pan-y bg-white">
+    <AnimatePresence mode="wait">
+      <motion.img
+        key={selectedProduct.images[activeImageIdx]}
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -50 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        src={selectedProduct.images[activeImageIdx]}
+        alt={selectedProduct.name}
+        className="w-full h-auto block"
+        referrerPolicy="no-referrer"
                               drag="x"
                               dragConstraints={{ left: 0, right: 0 }}
                               onDragEnd={(_, info) => {
