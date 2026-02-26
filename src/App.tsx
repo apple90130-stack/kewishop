@@ -542,12 +542,12 @@ export default function App() {
                         product.category === 'welfare' ? 'col-span-2 lg:col-span-4' : ''
                       }`}
                     >
-                     <div className="relative w-full overflow-hidden bg-white">
-    {/* 🌟 更新：統一滿版寬度，高度按圖片比例自然延伸 */}
+                     <div className={`relative w-full overflow-hidden bg-white ${product.category === 'welfare' ? 'aspect-[21/9]' : 'aspect-[4/5]'}`}>
+    {/* 🌟 更新：首頁固定 4:5 比例 (福利區維持長條)，使用 object-cover 完美填滿 */}
     <img
       src={product.images[0]}
       alt={product.name}
-      className="w-full h-auto block transition-transform duration-700 group-hover:scale-110"
+      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
       referrerPolicy="no-referrer"
     />
                         {product.status === 'limited' && (
