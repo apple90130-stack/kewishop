@@ -515,7 +515,55 @@ export default function App() {
                     </div>
                   </motion.div>
                 )}
+{/* 🌟 精緻小巧輪播區塊 */}
+<AnimatePresence>
+  {carouselItems.length > 0 && (
+    <div className="mb-8 w-full aspect-[21/9] md:aspect-[3/1] bg-stone-900 rounded-3xl overflow-hidden relative shadow-xl shadow-rose-200/50">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentSlide}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -50 }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0 cursor-pointer"
+          onClick={() => {
+            // 🌟 點擊後跳轉到 LINE 並帶入客製化關鍵字
+            const item = carouselItems[currentSlide];
+            const message = item.lineKeyword || `我想詢問商品：${item.name}`;
+            window.open(`https://line.me/R/oaMessage/@234csaak/?${encodeURIComponent(message)}`, '_blank');
+          }}
+        >
+          <img
+            src={carouselItems[currentSlide].images[0]}
+            className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity"
+            alt="Carousel Item"
+          />
+          {/* 漸層裝飾文字 */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-stone-900/80 to-transparent">
+            <h3 className="text-white text-lg md:text-xl font-bold">
+              {carouselItems[currentSlide].name}
+            </h3>
+            <p className="text-white/60 text-sm">點擊立即私訊詢問 ✨</p>
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
+      {/* 輪播指示點 (Dots) */}
+      <div className="absolute bottom-4 right-6 flex gap-2">
+        {carouselItems.map((_, idx) => (
+          <div
+            key={idx}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+              idx === currentSlide ? 'bg-rose-500 w-6' : 'bg-white/30'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  )}
+</AnimatePresence>
+                
                 {/* Hero Section */}
                 <section className="mb-12 text-center mt-6">
                   <h2 className="text-4xl md:text-5xl font-bold mb-4 text-stone-800">
