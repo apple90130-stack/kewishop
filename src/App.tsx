@@ -44,6 +44,8 @@ export interface Product {
   maxLimit?: number;
   countdownTarget?: string;
   isAnnouncement?: boolean;
+  isCarousel?: boolean;     // 🌟 新增：是否輪播
+  lineKeyword?: string;     // 🌟 新增：LINE 客製化字語
 }
 
 // --- Mock Initial Data ---
@@ -103,6 +105,22 @@ const INITIAL_PRODUCTS: Product[] = [
 
 export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
+  // 🌟 篩選出需要輪播的商品
+  const carouselItems = useMemo(() => {
+    return products.filter(p => p.isCarousel);
+  }, [products]);
+
+  // 🌟 控制輪播目前的索引 (第幾張圖)
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // 🌟 設定每 4 秒自動換下一張
+  useEffect(() => {
+    if (carouselItems.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [carouselItems.length]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
