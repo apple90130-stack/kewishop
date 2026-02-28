@@ -893,21 +893,6 @@ export default function App() {
                           </div>
                         )}
                         </div>
-
-                        {editForm?.category === 'welfare' ? (
-                          <div className="flex items-center gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-200">
-                            <input 
-                              type="checkbox"
-                              id="isAnnouncement"
-                              checked={editForm?.isAnnouncement || false}
-                              onChange={(e) => setEditForm(prev => prev ? { ...prev, isAnnouncement: e.target.checked } : null)}
-                              className="w-5 h-5 accent-rose-500"
-                            />
-                            <label htmlFor="isAnnouncement" className="text-sm font-bold text-stone-900 cursor-pointer">
-                              設定為活動公告 (隱藏價格與規格)
-                            </label>
-                          </div>
-                        ) : null}
                         
                         <div>
                           <label className="block text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">商品名稱</label>
