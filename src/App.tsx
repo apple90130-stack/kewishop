@@ -1055,13 +1055,17 @@ export default function App() {
       <Clock className="w-4 h-4" /> 截團倒數
     </span>
     <div className="flex items-center gap-1 font-mono text-lg font-bold text-rose-500">
+      {/* 🌟 這是新增的天數區塊 */}
+      <span className="bg-white px-2 py-0.5 rounded shadow-sm">{String(timeLeft.days).padStart(2, '0')}</span>
+      <span className="text-sm font-sans mr-1 pt-0.5 text-rose-600">天</span>
+      
+      {/* 下面是時、分、秒 */}
       <span className="bg-white px-2 py-0.5 rounded shadow-sm">{String(timeLeft.hours).padStart(2, '0')}</span>
       <span className="animate-pulse">:</span>
       <span className="bg-white px-2 py-0.5 rounded shadow-sm">{String(timeLeft.minutes).padStart(2, '0')}</span>
       <span className="animate-pulse">:</span>
       <span className="bg-white px-2 py-0.5 rounded shadow-sm">{String(timeLeft.seconds).padStart(2, '0')}</span>
     </div>
-  </div>
 )}
                           {!selectedProduct.isAnnouncement && (
                             <div className="flex items-baseline gap-3 mb-6">
