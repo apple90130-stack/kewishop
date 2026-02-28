@@ -102,6 +102,14 @@ const INITIAL_PRODUCTS: Product[] = [
     isAnnouncement: true,
   }
 ];
+// 🌟 規格價格解析器：會自動從「規格名:價格」格式中抓出數字
+// 例如輸入「大包裝:500」，它就會回傳 500；若沒寫價格，則回傳商品原價
+const getVariantPrice = (basePrice: number, variantStr: string) => {
+  if (!variantStr) return basePrice;
+  // 匹配冒號後面的數字 (支援全形：與半形:)
+  const match = variantStr.match(/[:：]\s*(\d+)/);
+  return match ? parseInt(match[1], 10) : basePrice;
+};
 
 export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -1067,8 +1075,9 @@ export default function App() {
                           {!selectedProduct.isAnnouncement && (
                             <div className="flex items-baseline gap-3 mb-6">
                               <span className="text-4xl font-bold text-stone-700">
-                                ${selectedProduct.price}
-                              </span>
+  {/* 🌟 呼叫解析器，根據選中的規格 (selectedVariant) 顯示價格 */}
+  ${getVariantPrice(selectedProduct.price, selectedVariant)}
+</span>
                               {selectedProduct.originalPrice && (
                                 <span className="text-lg text-stone-700/40 line-through">
                                   ${selectedProduct.originalPrice}
@@ -1322,7 +1331,10 @@ export default function App() {
                         <p className="text-stone-700/60 text-xs mb-1">規格：{item.variant || '預設'}</p>
                         <p className="text-stone-700/60 text-sm mb-2">${item.product.price} x {item.quantity}</p>
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-stone-700">${item.product.price * item.quantity}</span>
+                          {/* 🌟 修改這裡：讓購物車也能抓到規格價格 */}
+<span className="font-bold text-rose-500">
+  ${getVariantPrice(item.product.price, item.variant) * item.quantity}
+</span>
                           <button 
                             onClick={() => removeFromCart(item.product.id, item.variant)}
                             className="text-xs text-rose-500 font-bold hover:underline bg-rose-50 px-2 py-1 rounded"
@@ -1341,7 +1353,7 @@ export default function App() {
                   <div className="flex justify-between items-center mb-6">
                     <span className="text-stone-700/60">總計金額</span>
                     <span className="text-2xl font-bold text-stone-700">
-                      ${cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0)}
+                      ${cart.reduce((sum, item) => sum + getVariantPrice(item.product.price, item.variant) * item.quantity, 0)}
                     </span>
                   </div>
                   <button 
