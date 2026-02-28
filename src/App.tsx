@@ -153,7 +153,7 @@ export default function App() {
   const [activeCategory, setActiveCategory] = useState<'all' | 'health' | 'daily' | 'limited' | 'welfare'>('all');
   
   // Countdown State
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showToast, setShowToast] = useState(false);
 
   const activeCountdownProduct = useMemo(() => {
@@ -169,7 +169,7 @@ export default function App() {
   useEffect(() => {
     // 把原本的 activeCountdownProduct 替換成 selectedProduct
     if (!selectedProduct?.countdownTarget) {
-      setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       return;
     }
 
@@ -178,12 +178,13 @@ export default function App() {
       const distance = new Date(selectedProduct.countdownTarget).getTime() - now;
       
       if (distance < 0) {
-        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         clearInterval(timer);
         return;
       }
 
       setTimeLeft({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)), // 🌟 告訴程式怎麼算天數
         hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
         minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
         seconds: Math.floor((distance % (1000 * 60)) / 1000)
