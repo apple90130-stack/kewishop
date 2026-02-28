@@ -498,7 +498,7 @@ export default function App() {
                 transition={{ duration: 0.4 }}
               >
               
-                )}
+      
 {/* 🌟 精緻小巧輪播區塊 */}
 <AnimatePresence>
   {carouselItems.length > 0 && (
