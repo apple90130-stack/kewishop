@@ -1066,6 +1066,7 @@ export default function App() {
       <span className="animate-pulse">:</span>
       <span className="bg-white px-2 py-0.5 rounded shadow-sm">{String(timeLeft.seconds).padStart(2, '0')}</span>
     </div>
+  </div>
 )}
                           {!selectedProduct.isAnnouncement && (
                             <div className="flex items-baseline gap-3 mb-6">
