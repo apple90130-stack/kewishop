@@ -869,6 +869,29 @@ export default function App() {
                             <option value="limited">限時開團</option>
                             <option value="welfare">葵粉福利區</option>
                           </select>
+                          {/* 只有當分類是「葵粉福利區 (welfare)」時，才顯示下方選項 */}
+                        {editForm?.category === 'welfare' && (
+                          <div className="flex flex-col gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-200 mt-4">
+                            <label className="flex items-center gap-3 font-bold cursor-pointer text-stone-900">
+                              <input 
+                                type="checkbox" 
+                                checked={editForm?.isAnnouncement || false} 
+                                onChange={(e) => setEditForm(p => p ? {...p, isAnnouncement: e.target.checked} : null)} 
+                                className="w-5 h-5 accent-rose-500"
+                              />
+                              設定為純公告 (不顯示價格與規格)
+                            </label>
+                            <label className="flex items-center gap-3 font-bold cursor-pointer text-rose-600">
+                              <input 
+                                type="checkbox" 
+                                checked={editForm?.isCarousel || false} 
+                                onChange={(e) => setEditForm(p => p ? {...p, isCarousel: e.target.checked} : null)} 
+                                className="w-5 h-5 accent-rose-500"
+                              />
+                              <Sparkles className="w-4 h-4 inline" /> 設為首頁動態輪播
+                            </label>
+                          </div>
+                        )}
                         </div>
 
                         {editForm?.category === 'welfare' ? (
