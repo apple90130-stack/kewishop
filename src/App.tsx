@@ -1107,7 +1107,7 @@ export default function App() {
                           </div>
 
                           {/* Variant & Quantity Selection */}
-                          {!(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') && (
+                          {!selectedProduct.isAnnouncement && (
                             <div className="space-y-6 mb-8 p-6 bg-rose-50/50 rounded-3xl border border-rose-200/20">
                               {selectedProduct.variants.length > 0 && (
                                 <div>
@@ -1173,7 +1173,7 @@ export default function App() {
                             >
                               {(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') ? '立即詢問' : '立即下單'} <ExternalLink className="w-5 h-5" />
                             </button>
-                            {!(selectedProduct.isAnnouncement || selectedProduct.category === 'welfare') && (
+                            {!selectedProduct.isAnnouncement && (
                               <button 
                                 onClick={() => addToCart(selectedProduct, selectedVariant, selectedQuantity)}
                                 className="flex-1 bg-rose-200 text-stone-700 py-4 rounded-2xl font-bold text-lg hover:bg-rose-200/70 transition-all duration-300 flex items-center justify-center gap-2"
