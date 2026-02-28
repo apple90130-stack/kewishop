@@ -165,15 +165,17 @@ export default function App() {
     return limitedProducts.find(p => new Date(p.countdownTarget!).getTime() > now);
   }, [products]);
 
+  // 🌟 修改後的計時器邏輯：只針對目前選中的商品倒數
   useEffect(() => {
-    if (!activeCountdownProduct?.countdownTarget) {
+    // 把原本的 activeCountdownProduct 替換成 selectedProduct
+    if (!selectedProduct?.countdownTarget) {
       setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
       return;
     }
 
     const timer = setInterval(() => {
       const now = new Date().getTime();
-      const distance = new Date(activeCountdownProduct.countdownTarget!).getTime() - now;
+      const distance = new Date(selectedProduct.countdownTarget).getTime() - now;
       
       if (distance < 0) {
         setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
@@ -189,7 +191,7 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [activeCountdownProduct]);
+  }, [selectedProduct]); // 🌟 這裡也改成 selectedProduct
 
   const scrollToLimited = () => {
     setActiveCategory('limited');
@@ -494,34 +496,7 @@ export default function App() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4 }}
               >
-                {/* Countdown Banner */}
-                {activeCountdownProduct && (
-                  <motion.div 
-                    onClick={scrollToLimited}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8 bg-stone-900 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 cursor-pointer hover:bg-stone-800 transition-all shadow-lg shadow-stone-900/20"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-rose-500">
-                        <Zap className="w-5 h-5 fill-current" />
-                      </div>
-                      <div>
-                        <h3 className="text-white font-bold text-base">即將截團：{activeCountdownProduct.name}</h3>
-                        <p className="text-white/60 text-xs">精選商品下殺優惠，錯過不再！</p>
-                      </div>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 flex items-center gap-3 border border-white/10">
-                      <span className="text-white/60 text-xs font-bold">截團倒數</span>
-                      <div className="flex items-center gap-2 font-mono text-xl font-bold text-rose-500">
-                        <span>{String(timeLeft.hours).padStart(2, '0')}</span>
-                        <span className="animate-pulse">:</span>
-                        <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
-                        <span className="animate-pulse">:</span>
-                        <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
-                      </div>
-                    </div>
-                  </motion.div>
+              
                 )}
 {/* 🌟 精緻小巧輪播區塊 */}
 <AnimatePresence>
