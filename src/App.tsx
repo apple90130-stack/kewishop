@@ -175,7 +175,7 @@ export default function App() {
 
     const timer = setInterval(() => {
       const now = new Date().getTime();
-      const distance = new Date(selectedProduct.countdownTarget).getTime() - now;
+      const distance = new Date(selectedProduct.countdownTarget!).getTime() - now;
       
       if (distance < 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
