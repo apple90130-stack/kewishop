@@ -1047,6 +1047,21 @@ export default function App() {
                           <h2 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4 leading-tight">
                             {selectedProduct.name}
                           </h2>
+                          {/* 🌟 專屬詳細頁的限時倒數計時器 */}
+{selectedProduct.category === 'limited' && selectedProduct.countdownTarget && (
+  <div className="mb-6 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 inline-flex items-center gap-3 shadow-sm">
+    <span className="text-rose-600 text-sm font-bold flex items-center gap-1">
+      <Clock className="w-4 h-4" /> 截團倒數
+    </span>
+    <div className="flex items-center gap-1 font-mono text-lg font-bold text-rose-500">
+      <span className="bg-white px-2 py-0.5 rounded shadow-sm">{String(timeLeft.hours).padStart(2, '0')}</span>
+      <span className="animate-pulse">:</span>
+      <span className="bg-white px-2 py-0.5 rounded shadow-sm">{String(timeLeft.minutes).padStart(2, '0')}</span>
+      <span className="animate-pulse">:</span>
+      <span className="bg-white px-2 py-0.5 rounded shadow-sm">{String(timeLeft.seconds).padStart(2, '0')}</span>
+    </div>
+  </div>
+)}
                           {!selectedProduct.isAnnouncement && (
                             <div className="flex items-baseline gap-3 mb-6">
                               <span className="text-4xl font-bold text-stone-700">
